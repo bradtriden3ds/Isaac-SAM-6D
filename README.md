@@ -1,3 +1,63 @@
+## UV Implementation 
+
+Install
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+Env
+```bash
+uv venv --python=3.11
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
+
+PointNet2
+```bash
+cd SAM-6D
+cd Pose_Estimation_Model/model/pointnet2
+python setup.py install
+```
+
+Download models
+```bash
+cd Instance_Segmentation_Model
+python download_sam.py
+python download_fastsam.py
+python download_dinov2.py
+cd ../
+
+cd Pose_Estimation_Model
+python download_sam6d-pem.py
+```
+
+## Demo
+
+```
+export CAD_PATH=Data/Example/obj_000005.ply    # path to a given cad model(mm)
+export RGB_PATH=Data/Example/rgb.png           # path to a given RGB image
+export DEPTH_PATH=Data/Example/depth.png       # path to a given depth map(mm)
+export CAMERA_PATH=Data/Example/camera.json    # path to given camera intrinsics
+export OUTPUT_DIR=Data/Example/outputs   
+```
+
+Blender render
+```
+sudo apt-get install -y \
+    libsm6 \
+    libxkbcommon0 \
+    libxrender1 \
+    libxi6 \
+    libxxf86vm1 \
+    libxfixes3 \
+    libxext6 \
+    libx11-6 \
+    libgl1 \
+    libopengl0
+```
+
+
+
+
 # <p align="center"> <font color=#008000>SAM-6D</font>: Segment Anything Model Meets Zero-Shot 6D Object Pose Estimation </p>
 
 ####  <p align="center"> [Jiehong Lin](https://jiehonglin.github.io/), [Lihua Liu](https://github.com/foollh), [Dekun Lu](https://github.com/WuTanKun), [Kui Jia](http://kuijia.site/)</p>
