@@ -32,29 +32,38 @@ python download_sam6d-pem.py
 
 ## Demo
 
-```
-export CAD_PATH=Data/Example/obj_000005.ply    # path to a given cad model(mm)
-export RGB_PATH=Data/Example/rgb.png           # path to a given RGB image
-export DEPTH_PATH=Data/Example/depth.png       # path to a given depth map(mm)
-export CAMERA_PATH=Data/Example/camera.json    # path to given camera intrinsics
-export OUTPUT_DIR=Data/Example/outputs   
+Download dataset via: https://huggingface.co/datasets/bop-benchmark/lm/tree/main
+
+Env paths
+```bash
+export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
+
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example2/obj_000008.ply    
+export RGB_PATH=$SAM_6D_FOLDER/Data/Example2/rgb.png           
+export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png       
+export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
+export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
 ```
 
 Blender render
-```
-sudo apt-get install -y \
-    libsm6 \
-    libxkbcommon0 \
-    libxrender1 \
-    libxi6 \
-    libxxf86vm1 \
-    libxfixes3 \
-    libxext6 \
-    libx11-6 \
-    libgl1 \
-    libopengl0
+```bash
+blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
 ```
 
+Instance Segmentation
+```bash
+export SEGMENTOR_MODEL=sam
+cd Instance_Segmentation_Model/
+python run_inference_custom.py --segmentor_model $SEGMENTOR_MODEL --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH
+```
+
+Pose Estimation
+```bash
+export SEG_PATH=$OUTPUT_DIR/sam6d_results/detection_ism.json
+
+cd ../Pose_Estimation_Model
+python run_inference_custom.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH --seg_path $SEG_PATH
+```
 
 
 

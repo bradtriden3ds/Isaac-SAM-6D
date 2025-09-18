@@ -16,3 +16,6 @@ pytorch-lightning
 ruamel.yaml
 gdown
 blenderproc
+huggingface_hub[cli]
+pycocotools
+timm
