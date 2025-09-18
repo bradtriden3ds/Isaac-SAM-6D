@@ -38,7 +38,7 @@ Env paths
 ```bash
 export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example2/obj_000008.ply    
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example2/obj_000009.ply    
 export RGB_PATH=$SAM_6D_FOLDER/Data/Example2/rgb.png           
 export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png       
 export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
