@@ -44,7 +44,7 @@ export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png
 export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
 export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube3.ply    
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube.ply    
 export RGB_PATH=$SAM_6D_FOLDER/Data/Example3/rgb.png           
 export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example3/depth.png       
 export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example3/camera.json    
@@ -69,6 +69,7 @@ export SEG_PATH=$OUTPUT_DIR/sam6d_results/detection_ism.json
 
 cd ../Pose_Estimation_Model
 python run_inference_custom.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH --seg_path $SEG_PATH
+# --det_score_thresh=0.5
 ```
 
 
