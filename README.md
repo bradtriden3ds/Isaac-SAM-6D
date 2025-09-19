@@ -43,6 +43,12 @@ export RGB_PATH=$SAM_6D_FOLDER/Data/Example2/rgb.png
 export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png       
 export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
 export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
+
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube3.ply    
+export RGB_PATH=$SAM_6D_FOLDER/Data/Example3/rgb.png           
+export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example3/depth.png       
+export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example3/camera.json    
+export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example3/outputs  
 ```
 
 Blender render
