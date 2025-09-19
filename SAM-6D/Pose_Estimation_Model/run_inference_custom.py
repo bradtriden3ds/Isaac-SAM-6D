@@ -91,7 +91,7 @@ from data_utils import (
     get_point_cloud_from_depth,
     get_resize_rgb_choose,
 )
-from draw_utils import draw_detections
+from draw_utils import draw_detections, draw_text, non_max_suppression
 import pycocotools.mask as cocomask
 import trimesh
 
@@ -99,8 +99,17 @@ rgb_transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                     std=[0.229, 0.224, 0.225])])
 
-def visualize(rgb, pred_rot, pred_trans, model_points, K, save_path):
+
+
+def visualize(rgb, pred_rot, pred_trans, model_points, K, save_path, score=None):
     img = draw_detections(rgb, pred_rot, pred_trans, model_points, K, color=(255, 0, 0))
+    if score is not None:
+        img = draw_text(img, score, (10, 60), color=(0, 150, 200))
+        # also draw pret_rot and pred_trans 
+        img = draw_text(img, "rot: "+ str(np.round(pred_rot.tolist(), 2)), (10, 80), color=(200, 150, 0))
+        img = draw_text(img, "trans: "+ str(np.round(pred_trans.tolist(), 2)), (10, 100), color=(0, 200, 0))
+
+
     img = Image.fromarray(np.uint8(img))
     img.save(save_path)
     prediction = Image.open(save_path)
@@ -313,20 +322,50 @@ if __name__ == "__main__":
     pred_rot = out['pred_R'].detach().cpu().numpy()
     pred_trans = out['pred_t'].detach().cpu().numpy() * 1000
 
-    print("=> saving results ...")
-    os.makedirs(f"{cfg.output_dir}/sam6d_results", exist_ok=True)
+    print("=> applying Non-Maximum Suppression...")
+    
+    # First, update all detections with pose estimation results
+    scale = (np.max(model_points, axis=0) - np.min(model_points, axis=0))
     for idx, det in enumerate(detections):
         detections[idx]['score'] = float(pose_scores[idx])
         detections[idx]['R'] = list(pred_rot[idx].tolist())
         detections[idx]['t'] = list(pred_trans[idx].tolist())
+        detections[idx]['s'] = list(scale.tolist())
+    
+    # Apply Non-Maximum Suppression to filter overlapping detections
+    print(f"=> Before NMS: {len(detections)} detections")
 
+    # TODO: remove this range(len(detections)) # 
+    nms_indices = non_max_suppression(detections, iou_threshold=0.2)
+    print(f"=> After NMS: {len(nms_indices)} detections")
+    
+    # Filter detections, predictions, and other data based on NMS results
+    filtered_detections = [detections[i] for i in nms_indices]
+    filtered_pred_rot = pred_rot[nms_indices]
+    filtered_pred_trans = pred_trans[nms_indices]
+    filtered_pose_scores = pose_scores[nms_indices]
+    
+    # Save filtered results
+    print("=> saving filtered results ...")
+    os.makedirs(f"{cfg.output_dir}/sam6d_results", exist_ok=True)
     with open(os.path.join(f"{cfg.output_dir}/sam6d_results", 'detection_pem.json'), "w") as f:
-        json.dump(detections, f)
+        json.dump(filtered_detections, f)
+    
+    # Update detections for visualization
+    detections = filtered_detections
 
     print("=> visualizating ...")
-    save_path = os.path.join(f"{cfg.output_dir}/sam6d_results", 'vis_pem.png')
-    valid_masks = pose_scores == pose_scores.max()
-    K = input_data['K'].detach().cpu().numpy()[valid_masks]
-    vis_img = visualize(img, pred_rot[valid_masks], pred_trans[valid_masks], model_points*1000, K, save_path)
-    vis_img.save(save_path)
+    
+    import ipdb; ipdb.set_trace()
+    
+    for idx in range(len(detections)):
+        K = np.expand_dims(input_data['K'].detach().cpu().numpy()[idx], axis=0)
+        save_path = os.path.join(f"{cfg.output_dir}/sam6d_results", 'vis_pem_'+str(idx)+'.png')
+        vis_img = visualize(img, 
+            np.expand_dims(filtered_pred_rot[idx], axis=0), 
+            np.expand_dims(filtered_pred_trans[idx], axis=0), 
+            model_points*1000, K, save_path,
+            score=detections[idx]['score']
+            )
+        vis_img.save(save_path)
 

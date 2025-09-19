@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import cv2
+import pycocotools.mask as cocomask
 
 def calculate_2d_projections(coordinates_3d, intrinsics):
     """
@@ -95,3 +96,136 @@ def draw_detections(image, pred_rots, pred_trans, model_points, intrinsics, colo
         draw_image_bbox = draw_3d_pts(draw_image_bbox, projected_pts, color)
 
     return draw_image_bbox
+
+def draw_text(img, text, position, color):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    thickness = 2
+    # Convert text to string if it's not already
+    if isinstance(text, (int, float)):
+        text = f"{text:.3f}"
+    elif hasattr(text, 'item'):  # Handle numpy scalars or tensors
+        text = f"{text.item():.3f}"
+    else:
+        text = str(text)
+    cv2.putText(img, text, position, font, font_scale, color, thickness)
+    return img
+
+
+def bbox_iou(bbox1, bbox2):
+    """
+    Calculate Intersection over Union (IoU) between two bounding boxes.
+    
+    Args:
+        bbox1, bbox2: [x,y, w, h]
+    
+    Returns:
+        iou: float, IoU value between 0 and 1
+    """
+    x1_1, y1_1, w1, h1 = bbox1
+    x1_2, y1_2 = x1_1 + w1, y1_1 + h1
+    x2_1, y2_1, w2, h2 = bbox2
+    x2_2, y2_2 = x2_1 + w2, y2_1 + h2
+    intersection = max(0, min(x1_2, x2_2) - max(x1_1, x2_1)) * max(0, min(y1_2, y2_2) - max(y1_1, y2_1))
+    union = w1 * h1 + w2 * h2 - intersection
+    return intersection / union if union > 0 else 0.0
+
+
+def mask_iou(mask1, mask2):
+    """
+    Calculate Intersection over Union (IoU) between two binary masks.
+    
+    Args:
+        mask1, mask2: binary numpy arrays
+    
+    Returns:
+        iou: float, IoU value between 0 and 1
+    """
+    intersection = np.logical_and(mask1, mask2).sum()
+    union = np.logical_or(mask1, mask2).sum()
+    
+    return intersection / union if union > 0 else 0.0
+
+
+def segmentation_iou(seg1, seg2, image_size):
+    """
+    Calculate IoU between two COCO-style segmentations.
+    
+    Args:
+        seg1, seg2: COCO segmentation format
+        image_size: (height, width) tuple
+    
+    Returns:
+        iou: float, IoU value between 0 and 1
+    """
+    h, w = image_size
+    
+    # Decode segmentations to masks
+    try:
+        rle1 = cocomask.frPyObjects(seg1, h, w) if not isinstance(seg1, dict) else seg1
+        rle2 = cocomask.frPyObjects(seg2, h, w) if not isinstance(seg2, dict) else seg2
+    except:
+        rle1 = seg1
+        rle2 = seg2
+    
+    mask1 = cocomask.decode(rle1) > 0
+    mask2 = cocomask.decode(rle2) > 0
+    
+    return mask_iou(mask1, mask2)
+
+
+def non_max_suppression(detections, iou_threshold=0.5):
+    """
+    Apply Non-Maximum Suppression to filter overlapping detections.
+    
+    Args:
+        detections: list of detection dictionaries with 'score', 'bbox' (optional), 'segmentation' (optional)
+        iou_threshold: float, IoU threshold for considering detections as overlapping
+    
+    Returns:
+        keep_indices: list of indices to keep after NMS
+    """
+    if len(detections) == 0:
+        return []
+    
+    # Extract scores
+    scores = [det['score'] for det in detections]
+    
+    # Sort by score in descending order
+    sorted_indices = np.argsort(scores)[::-1]
+    
+    keep_indices = []
+    
+    while len(sorted_indices) > 0:
+        # Keep the detection with highest score
+        current_idx = sorted_indices[0]
+        keep_indices.append(current_idx)
+        
+        if len(sorted_indices) == 1:
+            break
+            
+        current_det = detections[current_idx]
+        remaining_indices = sorted_indices[1:]
+        
+        # Calculate IoU with remaining detections
+        overlaps = []
+        for idx in remaining_indices:
+            other_det = detections[idx]
+            
+            if 'bbox' in current_det and 'bbox' in other_det:
+                # Use bbox IoU as fallback
+                iou = bbox_iou(current_det['bbox'], other_det['bbox'])
+                print(f"cbbox IoU: {iou}", "current_det['bbox']", current_det['bbox'], 
+                "other_det['bbox']", other_det['bbox'])
+            else:
+                # If no bbox or mask info, assume no overlap
+                iou = 0.0
+            
+            overlaps.append(iou)
+        
+        # Remove detections that overlap too much
+        overlaps = np.array(overlaps)
+        non_overlapping = overlaps <= iou_threshold
+        sorted_indices = remaining_indices[non_overlapping]
+    
+    return keep_indices
