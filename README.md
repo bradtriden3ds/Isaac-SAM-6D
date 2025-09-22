@@ -45,16 +45,24 @@ export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
 # export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
 # export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube.ply    
-export RGB_PATH=$SAM_6D_FOLDER/Data/Example3/rgb.png           
-export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example3/depth.png       
-export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example3/camera.json    
-export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example3/outputs  
+# export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube.ply    
+# export RGB_PATH=$SAM_6D_FOLDER/Data/Example3/rgb.png           
+# export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example3/depth.png       
+# export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example3/camera.json    
+# export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example3/outputs  
+
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example4/box.ply   
+export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example4/outputs  
+export RGB_PATH=$SAM_6D_FOLDER/Data/Example4/rgb.png           
+export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example4/depth.png   
 ```
 
 Blender render
 ```bash
 blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
+
+# or
+blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
 ```
 
 Instance Segmentation
