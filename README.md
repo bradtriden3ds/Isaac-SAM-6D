@@ -31,18 +31,19 @@ python download_sam6d-pem.py
 ```
 
 ## Demo
-
+[Optional]
 Download dataset via: https://huggingface.co/datasets/bop-benchmark/lm/tree/main
 
 Env paths
 ```bash
+cd SAM-6D/
 export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example2/obj_000009.ply    
-export RGB_PATH=$SAM_6D_FOLDER/Data/Example2/rgb.png           
-export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png       
-export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
-export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
+# export CAD_PATH=$SAM_6D_FOLDER/Data/Example2/obj_000009.ply    
+# export RGB_PATH=$SAM_6D_FOLDER/Data/Example2/rgb.png           
+# export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example2/depth.png       
+# export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example2/camera.json    
+# export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example2/outputs   
 
 export CAD_PATH=$SAM_6D_FOLDER/Data/Example3/cube.ply    
 export RGB_PATH=$SAM_6D_FOLDER/Data/Example3/rgb.png           
@@ -68,10 +69,10 @@ Pose Estimation
 export SEG_PATH=$OUTPUT_DIR/sam6d_results/detection_ism.json
 
 cd ../Pose_Estimation_Model
-python run_inference_custom.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH --seg_path $SEG_PATH
-# --det_score_thresh=0.5
+python run_inference_custom.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH --seg_path $SEG_PATH --det_score_thresh=0.5
 ```
 
+-----------------------------------------
 
 
 # <p align="center"> <font color=#008000>SAM-6D</font>: Segment Anything Model Meets Zero-Shot 6D Object Pose Estimation </p>
