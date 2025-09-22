@@ -356,7 +356,6 @@ if __name__ == "__main__":
 
     print("=> visualizating ...")
     
-    import ipdb; ipdb.set_trace()
     
     for idx in range(len(detections)):
         K = np.expand_dims(input_data['K'].detach().cpu().numpy()[idx], axis=0)
