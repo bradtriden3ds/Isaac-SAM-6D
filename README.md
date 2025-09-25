@@ -51,11 +51,11 @@ export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
 # export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example3/camera.json    
 # export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example3/outputs  
 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example4/box.ply   
-export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example4/outputs  
-export RGB_PATH=$SAM_6D_FOLDER/Data/Example4/rgb.png           
-export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example4/depth.png   
-export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example4/camera.json   
+# export CAD_PATH=$SAM_6D_FOLDER/Data/Example4/box.ply   
+# export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example4/outputs  
+# export RGB_PATH=$SAM_6D_FOLDER/Data/Example4/rgb.png           
+# export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example4/depth.png   
+# export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example4/camera.json   
 
 export OBJ_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.obj 
 export CAD_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.ply   
@@ -70,8 +70,9 @@ Blender render
 blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
 
 # or
-blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
+# blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
 
+# if both obj and ply is provided, use the following code to overwrite the rgb images
 blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH
 ```
 
@@ -102,7 +103,6 @@ python run_inference_custom.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --r
 <p align="center">
   <img width="100%" src="https://github.com/JiehongLin/SAM-6D/blob/main/pics/vis.gif"/>
 </p>
-
 
 ## News
 - [2024/03/07] We publish an updated version of our paper on [ArXiv](https://arxiv.org/abs/2311.15707).
