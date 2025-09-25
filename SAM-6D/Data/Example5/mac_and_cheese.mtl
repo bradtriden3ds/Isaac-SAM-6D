@@ -1,0 +1,9 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v5.4.4108939008)
+
+newmtl Texture
+illum 1
+map_Kd ./baked_mesh_tex0.png
+bump ./baked_mesh_norm0.png
+map_bump ./baked_mesh_norm0.png
+
