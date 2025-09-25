@@ -55,6 +55,14 @@ export CAD_PATH=$SAM_6D_FOLDER/Data/Example4/box.ply
 export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example4/outputs  
 export RGB_PATH=$SAM_6D_FOLDER/Data/Example4/rgb.png           
 export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example4/depth.png   
+export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example4/camera.json   
+
+export OBJ_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.obj 
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.ply   
+export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example5/outputs  
+export RGB_PATH=$SAM_6D_FOLDER/Data/Example5/rgb.png           
+export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example5/depth.png  
+export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example5/camera.json   
 ```
 
 Blender render
@@ -63,6 +71,8 @@ blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --c
 
 # or
 blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
+
+blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH
 ```
 
 Instance Segmentation
