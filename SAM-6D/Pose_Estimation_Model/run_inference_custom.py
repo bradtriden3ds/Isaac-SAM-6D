@@ -322,8 +322,6 @@ if __name__ == "__main__":
     pred_rot = out['pred_R'].detach().cpu().numpy()
     pred_trans = out['pred_t'].detach().cpu().numpy() * 1000
 
-    import ipdb; ipdb.set_trace()
-    
     print("=> applying Non-Maximum Suppression...")
     
     # First, update all detections with pose estimation results
