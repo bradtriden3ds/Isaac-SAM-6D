@@ -10,10 +10,12 @@ import trimesh
 parser = argparse.ArgumentParser()
 parser.add_argument('--obj_path', type=str, help="The path of obj model")
 parser.add_argument('--output_dir', type=str, help="The path to save CAD templates")
+parser.add_argument('--ply_path', type=str, default=None, help="The path of ply model")
 args = parser.parse_args()
 
 print(args.obj_path)
 print(args.output_dir)
+print(args.ply_path)
 
 # set the cnos camera path
 render_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +41,10 @@ if not os.path.exists(args.obj_path):
     raise ValueError(f"Object file {args.obj_path} does not exist")
 
 obj_fpath = args.obj_path
-scale = get_norm_info(obj_fpath)
+scale_obj = get_norm_info(obj_fpath)
+
+if args.ply_path is not None:
+    scale_ply = get_norm_info(args.ply_path)
 
 # load cnos camera pose
 cam_poses = np.load(cnos_cam_fpath)
@@ -49,7 +54,7 @@ for idx, cam_pose in enumerate(cam_poses):
 
     # load object
     obj = bproc.loader.load_obj(obj_fpath)[0]
-    obj.set_scale([scale, scale, scale])
+    obj.set_scale([scale_obj, scale_obj, scale_obj])
     obj.set_cp("category_id", 1)
 
     # convert cnos camera poses to blender camera poses
@@ -87,31 +92,33 @@ for idx, cam_pose in enumerate(cam_poses):
     cv2.imwrite(os.path.join(save_fpath,'mask_'+str(idx)+'.png'), mask_0*255)
 
     # ################################################## PLY Templates ################################################## 
+    if args.ply_path is not None:
 
-    # bproc.clean_up()
+        bproc.clean_up()
 
-    # # load object
-    # obj = bproc.loader.load_obj(args.cad_path)[0]
-    # obj.set_scale([scale, scale, scale])
-    # obj.set_cp("category_id", 1)
+        scale_ply = get_norm_info(args.ply_path)
+        # load object
+        obj = bproc.loader.load_obj(args.ply_path)[0]
+        obj.set_scale([scale_ply, scale_ply, scale_ply])
+        obj.set_cp("category_id", 1)
 
-    # bproc.camera.add_camera_pose(cam_pose)
+        bproc.camera.add_camera_pose(cam_pose)
 
-    # # set light
-    # light_scale = 2.5
-    # light_energy = 1000
-    # light1 = bproc.types.Light()
-    # light1.set_type("POINT")
-    # light1.set_location([light_scale*cam_pose[:3, -1][0], light_scale*cam_pose[:3, -1][1], light_scale*cam_pose[:3, -1][2]])
-    # light1.set_energy(light_energy)
+        # set light
+        light_scale = 2.5
+        light_energy = 1000
+        light1 = bproc.types.Light()
+        light1.set_type("POINT")
+        light1.set_location([light_scale*cam_pose[:3, -1][0], light_scale*cam_pose[:3, -1][1], light_scale*cam_pose[:3, -1][2]])
+        light1.set_energy(light_energy)
 
-    # bproc.renderer.set_max_amount_of_samples(50)
+        bproc.renderer.set_max_amount_of_samples(50)
 
-    # # render the whole pipeline
-    # data = bproc.renderer.render()
-    # # render nocs
-    # data.update(bproc.renderer.render_nocs())
-    
-    # # save nocs
-    # xyz_0 = 2*(data["nocs"][0][..., :3] - 0.5)
-    # np.save(os.path.join(save_fpath,'xyz_'+str(idx)+'.npy'), xyz_0.astype(np.float16))
+        # render the whole pipeline
+        data = bproc.renderer.render()
+        # render nocs
+        data.update(bproc.renderer.render_nocs())
+        
+        # save nocs
+        xyz_0 = 2*(data["nocs"][0][..., :3] - 0.5)
+        np.save(os.path.join(save_fpath,'xyz_'+str(idx)+'.npy'), xyz_0.astype(np.float16))
