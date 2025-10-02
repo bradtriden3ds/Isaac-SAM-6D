@@ -67,13 +67,16 @@ export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example5/camera.json
 
 Blender render
 ```bash
-blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
+# blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
+# blenderproc debug ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
 
 # or
 # blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
 
-# if both obj and ply is provided, use the following code to overwrite the rgb images
-blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH
+# both CAD (.ply) and  OBJ file should be provided
+blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH --ply_path $CAD_PATH
+
+# blenderproc debug ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH --ply_path $CAD_PATH
 ```
 
 Instance Segmentation
