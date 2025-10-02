@@ -184,6 +184,11 @@ def get_test_data(rgb_path, depth_path, cam_path, cad_path, seg_path, det_score_
     K = np.array(cam_info['cam_K']).reshape(3, 3)
 
     whole_image = load_im(rgb_path).astype(np.uint8)
+
+    # if whole_image is RGBA, convert to RGB
+    if whole_image.shape[-1] == 4:
+        whole_image = whole_image[:,:,:3]
+
     if len(whole_image.shape)==2:
         whole_image = np.concatenate([whole_image[:,:,None], whole_image[:,:,None], whole_image[:,:,None]], axis=2)
     whole_depth = load_im(depth_path).astype(np.float32) * cam_info['depth_scale'] / 1000.0
