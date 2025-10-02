@@ -57,16 +57,16 @@ export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
 # export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example4/depth.png   
 # export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example4/camera.json   
 
-# export OBJ_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.obj 
-# export CAD_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.ply   
-# export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example5/outputs  
-# export RGB_PATH=$SAM_6D_FOLDER/Data/Example5/rgb.png           
-# export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example5/depth.png  
-# export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example5/camera.json   
+export OBJ_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.obj 
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example5/mac_and_cheese.ply   
+export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example5/outputs  
+export RGB_PATH=$SAM_6D_FOLDER/Data/Example5/rgb.png           
+export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example5/depth.png  
+export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example5/camera.json   
 
 
 export OBJ_PATH=$SAM_6D_FOLDER/Data/Example6/BOX_OBJ.obj 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example6/BOX_OBJ_new.ply   
+export CAD_PATH=$SAM_6D_FOLDER/Data/Example6/BOX_NEW.ply   
 export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example6/outputs  
 export RGB_PATH=$SAM_6D_FOLDER/Data/Example6/isaacsim_camera_capture_19_left.png           
 export DEPTH_PATH=$SAM_6D_FOLDER/Data/Example6/depth_map.png  
@@ -75,16 +75,8 @@ export CAMERA_PATH=$SAM_6D_FOLDER/Data/Example6/camera_1280x720.json
 
 Blender render
 ```bash
-# blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
-# blenderproc debug ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH #--colorize True 
-
-# or
-# blenderproc run ./Render/render_custom_templates.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --colorize True 
-
 # both CAD (.ply) and  OBJ file should be provided
 blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH --ply_path $CAD_PATH
-
-# blenderproc debug ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH --ply_path $CAD_PATH
 ```
 
 Instance Segmentation
