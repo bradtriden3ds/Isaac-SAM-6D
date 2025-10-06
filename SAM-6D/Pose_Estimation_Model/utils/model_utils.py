@@ -4,7 +4,7 @@ from torch.nn import functional as F
 
 import numpy as np
 
-from pointnet2_utils import (
+from Pose_Estimation_Model.model.pointnet2.pointnet2_utils import (
     gather_operation,
     furthest_point_sample,
 )
