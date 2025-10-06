@@ -312,11 +312,15 @@ if __name__ == "__main__":
     parser.add_argument("--depth_path", nargs="?", help="Path to Depth image(mm)")
     parser.add_argument("--cam_path", nargs="?", help="Path to camera information")
     parser.add_argument("--det_score_thresh", type=float, default=0.5, help="Threshold for detection score")
+    # create a boolean flag (default true) to indicate whether to use image segmentation or not
+    parser.add_argument("--use_image_segmentation", action='store_false', help="Whether to use image segmentation")
+    parser.add_argument("--use_pose_estimation", action='store_false', help="Whether to use pose estimation")
     args = parser.parse_args()
 
-    # Instance Segmentation
+   
 
-    if False:
+    # Instance Segmentation
+    if args.use_image_segmentation:
         sam = load_sam(
             model_type="vit_h",
             checkpoint_dir="./Instance_Segmentation_Model/checkpoints/segment-anything/",
@@ -485,8 +489,6 @@ if __name__ == "__main__":
         end_time1 = time.time()
         logging.info(f"Total time: {end_time1 - start_time:.2f}s")
 
-        import ipdb; ipdb.set_trace()
-
         # detections = convert_npz_to_json(idx=0, list_npz_paths=[save_path+".npz"])
         save_json_bop23(save_path+".json", results)
         vis_img = visualize_image_segmentation(rgb, results, f"{args.output_dir}/sam6d_results/vis_ism_server2.png")
@@ -494,97 +496,99 @@ if __name__ == "__main__":
 
 
     # Pose Estimation
-    estimator = Estimator(pose_estimation_config).to(device)
-    estimator.eval()
-    checkpoint = os.path.join("./Pose_Estimation_Model", 'checkpoints', 'sam-6d-pem-base.pth')
-    print("=> loading checkpoint ...", checkpoint)
-    gorilla.solver.load_checkpoint(model=estimator, filename=checkpoint)
+    if args.use_pose_estimation:
+        print("=> loading model ...")
+        estimator = Estimator(pose_estimation_config).to(device)
+        estimator.eval()
+        checkpoint = os.path.join("./Pose_Estimation_Model", 'checkpoints', 'sam-6d-pem-base.pth')
+        print("=> loading checkpoint ...", checkpoint)
+        gorilla.solver.load_checkpoint(model=estimator, filename=checkpoint)
 
-    print("=> extracting templates ...")
-    tem_path = os.path.join(args.output_dir, 'templates')
-    all_tem, all_tem_pts, all_tem_choose = get_templates(tem_path, pose_estimation_test_config)
-    with torch.no_grad():
-        all_tem_pts, all_tem_feat = estimator.feature_extraction.get_obj_feats(all_tem, all_tem_pts, all_tem_choose)
+        print("=> extracting templates ...")
+        tem_path = os.path.join(args.output_dir, 'templates')
+        all_tem, all_tem_pts, all_tem_choose = get_templates(tem_path, pose_estimation_test_config)
+        with torch.no_grad():
+            all_tem_pts, all_tem_feat = estimator.feature_extraction.get_obj_feats(all_tem, all_tem_pts, all_tem_choose)
 
-    seg_path = os.path.join(args.output_dir, 'sam6d_results', 'detection_ism.json')
-    input_data, img, whole_pts, model_points, detections = get_test_data(
-        args.rgb_path, args.depth_path, args.cam_path, args.cad_path, seg_path, 
-        args.det_score_thresh, pose_estimation_test_config
-    )
-    ninstance = input_data['pts'].size(0)
+        seg_path = os.path.join(args.output_dir, 'sam6d_results', 'detection_ism.json')
+        input_data, img, whole_pts, model_points, detections = get_test_data(
+            args.rgb_path, args.depth_path, args.cam_path, args.cad_path, seg_path, 
+            args.det_score_thresh, pose_estimation_test_config
+        )
+        ninstance = input_data['pts'].size(0)
 
-    print("=> running model ...")
-    with torch.no_grad():
-        input_data['dense_po'] = all_tem_pts.repeat(ninstance,1,1)
-        input_data['dense_fo'] = all_tem_feat.repeat(ninstance,1,1)
+        print("=> running model ...")
+        with torch.no_grad():
+            input_data['dense_po'] = all_tem_pts.repeat(ninstance,1,1)
+            input_data['dense_fo'] = all_tem_feat.repeat(ninstance,1,1)
 
-        # get output in batch to avoid memory error
-        bs = 4
-        n_batch = int(np.ceil(ninstance/bs))
+            # get output in batch to avoid memory error
+            bs = 4
+            n_batch = int(np.ceil(ninstance/bs))
 
-        out = {'pred_pose_score': [], 'score': [], 'pred_R': [], 'pred_t': []}
-        for j in range(n_batch):
-            start_idx = j * bs
-            end_idx = ninstance if j == n_batch-1 else (j+1) * bs
-            batch_input_data = {key: input_data[key][start_idx:end_idx] for key in input_data}
-            batch_out = estimator(batch_input_data)
+            out = {'pred_pose_score': [], 'score': [], 'pred_R': [], 'pred_t': []}
+            for j in range(n_batch):
+                start_idx = j * bs
+                end_idx = ninstance if j == n_batch-1 else (j+1) * bs
+                batch_input_data = {key: input_data[key][start_idx:end_idx] for key in input_data}
+                batch_out = estimator(batch_input_data)
+                for key in out:
+                    out[key].append(batch_out[key])
             for key in out:
-                out[key].append(batch_out[key])
-        for key in out:
-            out[key] = torch.cat(out[key], dim=0)
-            
-        # out = model(input_data)
-    
-    if 'pred_pose_score' in out.keys():
-        pose_scores = out['pred_pose_score'] * out['score']
-    else:
-        pose_scores = out['score']
-    pose_scores = pose_scores.detach().cpu().numpy()
-    pred_rot = out['pred_R'].detach().cpu().numpy()
-    pred_trans = out['pred_t'].detach().cpu().numpy() * 1000
+                out[key] = torch.cat(out[key], dim=0)
+                
+            # out = model(input_data)
+        
+        if 'pred_pose_score' in out.keys():
+            pose_scores = out['pred_pose_score'] * out['score']
+        else:
+            pose_scores = out['score']
+        pose_scores = pose_scores.detach().cpu().numpy()
+        pred_rot = out['pred_R'].detach().cpu().numpy()
+        pred_trans = out['pred_t'].detach().cpu().numpy() * 1000
 
-    print("=> applying Non-Maximum Suppression...")
-    
-    # First, update all detections with pose estimation results
-    scale = (np.max(model_points, axis=0) - np.min(model_points, axis=0))
-    for idx, det in enumerate(detections):
-        detections[idx]['score'] = float(pose_scores[idx])
-        detections[idx]['R'] = list(pred_rot[idx].tolist())
-        detections[idx]['t'] = list(pred_trans[idx].tolist())
-        detections[idx]['s'] = list(scale.tolist())
-    
-    # Apply Non-Maximum Suppression to filter overlapping detections
-    print(f"=> Before NMS: {len(detections)} detections")
+        print("=> applying Non-Maximum Suppression...")
+        
+        # First, update all detections with pose estimation results
+        scale = (np.max(model_points, axis=0) - np.min(model_points, axis=0))
+        for idx, det in enumerate(detections):
+            detections[idx]['score'] = float(pose_scores[idx])
+            detections[idx]['R'] = list(pred_rot[idx].tolist())
+            detections[idx]['t'] = list(pred_trans[idx].tolist())
+            detections[idx]['s'] = list(scale.tolist())
+        
+        # Apply Non-Maximum Suppression to filter overlapping detections
+        print(f"=> Before NMS: {len(detections)} detections")
 
-    # TODO: remove this range(len(detections)) # 
-    nms_indices = non_max_suppression(detections, iou_threshold=0.2)
-    print(f"=> After NMS: {len(nms_indices)} detections")
-    
-    # Filter detections, predictions, and other data based on NMS results
-    filtered_detections = [detections[i] for i in nms_indices]
-    filtered_pred_rot = pred_rot[nms_indices]
-    filtered_pred_trans = pred_trans[nms_indices]
-    filtered_pose_scores = pose_scores[nms_indices]
+        # TODO: remove this range(len(detections)) # 
+        nms_indices = non_max_suppression(detections, iou_threshold=0.2)
+        print(f"=> After NMS: {len(nms_indices)} detections")
+        
+        # Filter detections, predictions, and other data based on NMS results
+        filtered_detections = [detections[i] for i in nms_indices]
+        filtered_pred_rot = pred_rot[nms_indices]
+        filtered_pred_trans = pred_trans[nms_indices]
+        filtered_pose_scores = pose_scores[nms_indices]
 
-    # Save filtered results
-    print("=> saving filtered results ...")
-    os.makedirs(f"{args.output_dir}/sam6d_results", exist_ok=True)
-    with open(os.path.join(f"{args.output_dir}/sam6d_results", 'detection_pem.json'), "w") as f:
-        json.dump(filtered_detections, f)
-    
-    # Update detections for visualization
-    detections = filtered_detections
+        # Save filtered results
+        print("=> saving filtered results ...")
+        os.makedirs(f"{args.output_dir}/sam6d_results", exist_ok=True)
+        with open(os.path.join(f"{args.output_dir}/sam6d_results", 'detection_pem.json'), "w") as f:
+            json.dump(filtered_detections, f)
+        
+        # Update detections for visualization
+        detections = filtered_detections
 
-    print("=> visualizating ...")
-    
-    
-    for idx in range(len(detections)):
-        K = np.expand_dims(input_data['K'].detach().cpu().numpy()[idx], axis=0)
-        save_path = os.path.join(f"{args.output_dir}/sam6d_results", 'vis_pem_server'+str(idx)+'.png')
-        vis_img = visualize_pose_estimation(img, 
-            np.expand_dims(filtered_pred_rot[idx], axis=0), 
-            np.expand_dims(filtered_pred_trans[idx], axis=0), 
-            model_points*1000, K, save_path,
-            score=detections[idx]['score']
-            )
-        vis_img.save(save_path)
+        print("=> visualizating ...")
+        
+        
+        for idx in range(len(detections)):
+            K = np.expand_dims(input_data['K'].detach().cpu().numpy()[idx], axis=0)
+            save_path = os.path.join(f"{args.output_dir}/sam6d_results", 'vis_pem_server'+str(idx)+'.png')
+            vis_img = visualize_pose_estimation(img, 
+                np.expand_dims(filtered_pred_rot[idx], axis=0), 
+                np.expand_dims(filtered_pred_trans[idx], axis=0), 
+                model_points*1000, K, save_path,
+                score=detections[idx]['score']
+                )
+            vis_img.save(save_path)
