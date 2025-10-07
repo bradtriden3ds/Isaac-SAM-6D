@@ -77,7 +77,7 @@ class ViT_AE(nn.Module):
 
         if self.pretrained:
             vit_checkpoint = os.path.join('./Pose_Estimation_Model', 'checkpoints', 'mae_pretrain_'+ self.vit_type +'.pth')
-            if not os.path.isdir(vit_checkpoint):
+            if not os.path.exists(vit_checkpoint):
                 if not os.path.isdir('./Pose_Estimation_Model/checkpoints'):
                     os.makedirs('./Pose_Estimation_Model/checkpoints')
                 model_zoo.load_url('https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_'+ self.vit_type +'.pth', './Pose_Estimation_Model/checkpoints')

@@ -164,7 +164,7 @@ async def lifespan(app: FastAPI):
     sam6d_models["detector"] = load_detector()
     sam6d_models["estimator"] = load_estimator()
     init_templates(sam6d_models["detector"], os.getenv("CAD_PATH"), os.getenv("OUTPUT_DIR"))
-    sam6d_models["batch"] = batch_input_data(os.getenv("DEPTH_PATH"), os.getenv("CAM_PATH"), device)
+    sam6d_models["batch"] = batch_input_data(os.getenv("CAM_PATH"), device)
     sam6d_models["templates"] = get_templates(os.path.join(os.getenv("OUTPUT_DIR"), 'templates'), pose_estimation_test_config)
     yield
     # Clean up the ML models and release the resources
@@ -260,6 +260,9 @@ def run_sam6d(
 
     detector = sam6d_models["detector"]
     batch = sam6d_models["batch"]
+
+    depth = np.array(imageio.imread(depth_path)).astype(np.int32)
+    batch["depth"] = torch.from_numpy(depth).unsqueeze(0).to(device)
     # run inference
     rgb = Image.open(rgb_path).convert("RGB")
     detections = detector.segmentor_model.generate_masks(np.array(rgb))
@@ -349,8 +352,8 @@ def run_sam6d(
         for j in range(n_batch):
             start_idx = j * bs
             end_idx = ninstance if j == n_batch-1 else (j+1) * bs
-            batch_input_data = {key: input_data[key][start_idx:end_idx] for key in input_data}
-            batch_out = estimator(batch_input_data)
+            batch_in_data = {key: input_data[key][start_idx:end_idx] for key in input_data}
+            batch_out = estimator(batch_in_data)
             for key in out:
                 out[key].append(batch_out[key])
         for key in out:
