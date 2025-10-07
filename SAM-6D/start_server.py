@@ -238,7 +238,7 @@ async def run_sam6d_image_file_handler(
     with open(temp_depth_path, "wb") as f:
         f.write(depth_bytes)
 
-    run_sam6d(
+    return run_sam6d(
         rgb_path=temp_rgb_path,
         depth_path=temp_depth_path,
         det_score_thresh=det_score_thresh,
