@@ -180,6 +180,10 @@ def get_test_data(rgb_path, depth_path, cam_path, cad_path, seg_path, det_score_
             dets.append(det)
     del dets_
 
+    if len(dets) == 0 :
+        print("No objects detected")
+        raise RuntimeError("No objects detected")
+
     cam_info = json.load(open(cam_path))
     K = np.array(cam_info['cam_K']).reshape(3, 3)
 
@@ -266,6 +270,11 @@ def get_test_data(rgb_path, depth_path, cam_path, cad_path, seg_path, det_score_
     ret_dict['K'] = torch.FloatTensor(K).unsqueeze(0).repeat(ninstance, 1, 1).cuda()
     return ret_dict, whole_image, whole_pts.reshape(-1, 3), model_points, all_dets
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 if __name__ == "__main__":
@@ -372,4 +381,13 @@ if __name__ == "__main__":
             score=detections[idx]['score']
             )
         vis_img.save(save_path)
+
+        trans_tooutput = np.expand_dims(filtered_pred_trans[idx], axis=0).tolist()
+        rot_tooutput = np.expand_dims(filtered_pred_rot[idx], axis=0).tolist()
+        position={"trans":trans_tooutput, "rot": rot_tooutput}
+
+        with open(os.path.join(f"{cfg.output_dir}/sam6d_results", f"position_{idx}.json"),"w") as positionfile:
+            #json.dumps(trans_tooutput, cls=NumpyEncoder, indent=4)
+            json.dump(position,positionfile)
+
 
