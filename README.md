@@ -67,7 +67,7 @@ Go to http://localhost:8000/docs for documentation
 
 ## Performance
 
-After pre-rendering templetes, loading neural network models, e.t.c., the inference time given the `rgb` and `depth` information to get the `rotation and transform` is around 4.03 second on
+After pre-rendering templetes, loading neural network models, e.t.c., the inference time given the `rgb` and `depth` information to get the `rotation and transform` is around 4.03s on
 
 ```
 Ubuntu 24.04
@@ -79,7 +79,7 @@ DELL Precision 3660
 
 [Optional] referring to `socket_server.py` and `socket_client_example.py` for socket implementation 
 
-------------------------------------------------------------------------------------------------------------------- Debug -------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------- Outdated -------------------------------------------------------------------------
 ## Demo
 [Optional]
 Download dataset via: https://huggingface.co/datasets/bop-benchmark/lm/tree/main
