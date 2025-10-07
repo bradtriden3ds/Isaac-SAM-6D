@@ -1,8 +1,12 @@
-export SAM_6D_FOLDER=/home/yizhou/Projects/SAM-6D/SAM-6D
+export SAM_6D_FOLDER=/home/uxsimdeu/workspaces/Isaac-SAM-6D/SAM-6D
 export SEGMENTOR_MODEL=sam
-export OUTPUT_DIR=$SAM_6D_FOLDER/Data/Example6/outputs  
-export OBJ_PATH=$SAM_6D_FOLDER/Data/Example6/BOX_OBJ.obj 
-export CAD_PATH=$SAM_6D_FOLDER/Data/Example6/BOX_NEW.ply  
+export datadir=/mnt/e/users/uqr/IsaacSim/2025_10_05_SAM6D_Calibration_BoxOrigin
+export OUTPUT_DIR=$datadir/output/BOX_OBJ
+export OBJ_PATH=$datadir/model/BOX_OBJ.obj 
+export CAD_PATH=$datadir/model/BOX_OBJ.ply
+export RGB_PATH=$datadir/images/isaacsim_camera_capture_20_left.png
+export DEPTH_PATH=$datadir/depth/depth_map.png
+export CAMERA_PATH=$datadir/camerainfo/camera_1280x720.json
 
 # check if /templates exists under OUTPUT_DIR, if not run the following blenderproc command to generate it
 if [ ! -d "$OUTPUT_DIR/templates" ]; then
