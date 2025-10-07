@@ -165,14 +165,7 @@ def get_templates(path, cfg):
         all_tem_pts.append(torch.FloatTensor(tem_pts).unsqueeze(0).cuda())
     return all_tem, all_tem_pts, all_tem_choose
 
-def get_test_data(rgb_path, depth_path, cam_path, cad_path, seg_path, det_score_thresh, cfg):
-    dets = []
-    with open(seg_path) as f:
-        dets_ = json.load(f) # keys: scene_id, image_id, category_id, bbox, score, segmentation
-    for det in dets_:
-        if det['score'] > det_score_thresh:
-            dets.append(det)
-    del dets_
+def get_test_data(rgb_path, depth_path, cam_path, cad_path, dets, cfg):
 
     cam_info = json.load(open(cam_path))
     K = np.array(cam_info['cam_K']).reshape(3, 3)
