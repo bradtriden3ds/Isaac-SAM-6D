@@ -5,9 +5,9 @@ from torchvision.utils import make_grid, save_image
 import pytorch_lightning as pl
 import logging
 import numpy as np
-from utils.bbox_utils import CropResizePad, CustomResizeLongestSide
+from ..utils.bbox_utils import CropResizePad, CustomResizeLongestSide
 from torchvision.utils import make_grid, save_image
-from model.utils import BatchedData
+from .utils import BatchedData
 from copy import deepcopy
 import os.path as osp
 
