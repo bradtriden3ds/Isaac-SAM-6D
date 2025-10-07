@@ -28,14 +28,13 @@ rgb_transform = transforms.Compose([transforms.ToTensor(),
                                                     std=[0.229, 0.224, 0.225])])
 
 
-def batch_input_data(depth_path, cam_path, device):
+def batch_input_data(cam_path, device):
     batch = {}
     cam_info = load_json(cam_path)
-    depth = np.array(imageio.imread(depth_path)).astype(np.int32)
+    
     cam_K = np.array(cam_info['cam_K']).reshape((3, 3))
     depth_scale = np.array(cam_info['depth_scale'])
 
-    batch["depth"] = torch.from_numpy(depth).unsqueeze(0).to(device)
     batch["cam_intrinsic"] = torch.from_numpy(cam_K).unsqueeze(0).to(device)
     batch['depth_scale'] = torch.from_numpy(depth_scale).unsqueeze(0).to(device)
     return batch

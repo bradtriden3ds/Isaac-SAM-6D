@@ -16,13 +16,14 @@ PointNet2
 cd SAM-6D
 cd Pose_Estimation_Model/model/pointnet2
 python setup.py install
+cd ../../../
 ```
 
 Download models
 ```bash
 cd Instance_Segmentation_Model
 python download_sam.py
-python download_fastsam.py
+# python download_fastsam.py
 python download_dinov2.py
 cd ../
 
@@ -30,6 +31,20 @@ cd Pose_Estimation_Model
 python download_sam6d-pem.py
 ```
 
+## Start SAM6D Server
+
+Locate the `.env` file under the `/SAM-6D` folder,
+
+modify the following envariables, output directory, obj path, camera information path, and cad (ply) file path:
+
+```
+OUTPUT_DIR=./Data/Example6/outputs
+OBJ_PATH=./Data/Example6/BOX_OBJ.obj 
+CAM_PATH=./Data/Example6/camera_1280x720.json
+CAD_PATH=./Data/Example6/BOX_NEW.ply
+```
+
+------------------------------------------------------------------------------------------------------------------- Debug -------------------------------------------------------------------------
 ## Demo
 [Optional]
 Download dataset via: https://huggingface.co/datasets/bop-benchmark/lm/tree/main
