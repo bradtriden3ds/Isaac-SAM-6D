@@ -10,4 +10,4 @@ if [ ! -d "$OUTPUT_DIR/templates" ]; then
     blenderproc run ./Render/render_obj_templates.py --output_dir $OUTPUT_DIR --obj_path $OBJ_PATH --ply_path $CAD_PATH
 fi
 
-python start_server.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH --segmentor_model $SEGMENTOR_MODEL
+python start_server.py --output_dir $OUTPUT_DIR --cad_path $CAD_PATH --rgb_path $RGB_PATH --depth_path $DEPTH_PATH --cam_path $CAMERA_PATH
