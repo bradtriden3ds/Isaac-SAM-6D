@@ -11,6 +11,11 @@ import imageio
 import trimesh
 import time
 import logging
+import socket
+import threading
+import struct
+import pickle
+from io import BytesIO
 logging.basicConfig(level=logging.INFO)
 
 
@@ -153,104 +158,175 @@ def load_estimator():
 
     return estimator
 
-from fastapi import FastAPI, File, UploadFile, Form, Query
-from contextlib import asynccontextmanager 
-
 sam6d_models = {"detector": None, "estimator": None, "batch": None, "templates": {}}
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Load the ML model
+def initialize_models():
+    """Initialize SAM-6D models"""
+    logging.info("Initializing SAM-6D models...")
     sam6d_models["detector"] = load_detector()
     sam6d_models["estimator"] = load_estimator()
     init_templates(sam6d_models["detector"], os.getenv("CAD_PATH"), os.getenv("OUTPUT_DIR"))
     sam6d_models["batch"] = batch_input_data(os.getenv("CAM_PATH"), device)
     sam6d_models["templates"] = get_templates(os.path.join(os.getenv("OUTPUT_DIR"), 'templates'), pose_estimation_test_config)
-    yield
-    # Clean up the ML models and release the resources
+    logging.info("SAM-6D models initialized successfully!")
+
+def cleanup_models():
+    """Clean up the ML models and release resources"""
+    logging.info("Cleaning up models...")
     del sam6d_models["detector"]
     del sam6d_models["estimator"]
     del sam6d_models["batch"]
     torch.cuda.empty_cache()
 
-# Create app
-app = FastAPI(lifespan=lifespan)
+class SAM6DSocketServer:
+    def __init__(self, host='localhost', port=8000):
+        self.host = host
+        self.port = port
+        self.server_socket = None
+        self.running = False
+        
+    def send_data(self, conn, data):
+        """Send data over socket with length prefix"""
+        serialized = pickle.dumps(data)
+        length = struct.pack('!I', len(serialized))
+        conn.sendall(length + serialized)
+    
+    def receive_data(self, conn):
+        """Receive data over socket with length prefix"""
+        # First, receive the length of the message
+        length_data = b''
+        while len(length_data) < 4:
+            chunk = conn.recv(4 - len(length_data))
+            if not chunk:
+                raise ConnectionError("Connection closed")
+            length_data += chunk
+        
+        length = struct.unpack('!I', length_data)[0]
+        
+        # Now receive the actual data
+        data = b''
+        while len(data) < length:
+            chunk = conn.recv(length - len(data))
+            if not chunk:
+                raise ConnectionError("Connection closed")
+            data += chunk
+            
+        return pickle.loads(data)
+    
+    def handle_client(self, conn, addr):
+        """Handle individual client connection"""
+        logging.info(f"Connection established with {addr}")
+        try:
+            while True:
+                # Receive request from client
+                request = self.receive_data(conn)
+                
+                if request.get('action') == 'sam6d_inference':
+                    response = self.process_sam6d_request(request)
+                    self.send_data(conn, response)
+                elif request.get('action') == 'ping':
+                    self.send_data(conn, {'status': 'pong', 'message': 'SAM-6D server is running'})
+                elif request.get('action') == 'shutdown':
+                    logging.info("Shutdown request received")
+                    self.send_data(conn, {'status': 'shutting_down'})
+                    self.running = False
+                    break
+                else:
+                    self.send_data(conn, {'status': 'error', 'message': 'Unknown action'})
+                    
+        except ConnectionError:
+            logging.info(f"Client {addr} disconnected")
+        except Exception as e:
+            logging.error(f"Error handling client {addr}: {str(e)}")
+            try:
+                self.send_data(conn, {'status': 'error', 'message': str(e)})
+            except:
+                pass
+        finally:
+            conn.close()
+    
+    def process_sam6d_request(self, request):
+        """Process SAM-6D inference request"""
+        try:
+            rgb_bytes = request.get('rgb_bytes')
+            depth_bytes = request.get('depth_bytes')
+            det_score_thresh = request.get('det_score_thresh', 0.5)
+            visualize = request.get('visualize', True)
+            
+            if not rgb_bytes or not depth_bytes:
+                return {'status': 'error', 'message': 'RGB and depth bytes are required'}
+            
+            # Save bytes to temporary files
+            output_dir = os.getenv("OUTPUT_DIR")
+            temp_rgb_path = os.path.join(output_dir, "temp_rgb.png")
+            temp_depth_path = os.path.join(output_dir, "temp_depth.png")
+            
+            with open(temp_rgb_path, "wb") as f:
+                f.write(rgb_bytes)
+            with open(temp_depth_path, "wb") as f:
+                f.write(depth_bytes)
+            
+            # Run SAM-6D inference
+            result = run_sam6d(
+                rgb_path=temp_rgb_path,
+                depth_path=temp_depth_path,
+                det_score_thresh=det_score_thresh,
+                visualize=visualize,
+            )
+            
+            return {'status': 'success', 'data': result}
+            
+        except Exception as e:
+            logging.error(f"Error in SAM-6D processing: {str(e)}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def start_server(self):
+        """Start the socket server"""
+        initialize_models()
+        
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        
+        try:
+            self.server_socket.bind((self.host, self.port))
+            self.server_socket.listen(5)
+            self.running = True
+            
+            logging.info(f"SAM-6D Socket Server listening on {self.host}:{self.port}")
+            
+            while self.running:
+                try:
+                    conn, addr = self.server_socket.accept()
+                    client_thread = threading.Thread(
+                        target=self.handle_client, 
+                        args=(conn, addr)
+                    )
+                    client_thread.daemon = True
+                    client_thread.start()
+                except OSError:
+                    break
+                    
+        except Exception as e:
+            logging.error(f"Server error: {str(e)}")
+        finally:
+            self.cleanup()
+    
+    def cleanup(self):
+        """Cleanup server resources"""
+        logging.info("Shutting down server...")
+        self.running = False
+        if self.server_socket:
+            self.server_socket.close()
+        cleanup_models()
+        logging.info("Server shutdown complete")
 
-# Define a route
-@app.get("/")
-async def read_root():
-    return {"message": "Running SAM-6D server..."}
-
-@app.get("/sam6d_from_image_bytes")
-def run_sam6d_image_bytes_handler(
-    rgb_bytes: bytes = File(..., description="RGB image bytes"),
-    depth_bytes: bytes = File(..., description="Depth image bytes"),
-    det_score_thresh: float = Form(0.5),
-    visualize: bool = Form(True)
-):
-    output_dir = os.getenv("OUTPUT_DIR")
-    temp_rgb_path = os.path.join(output_dir, "temp_rgb.png")
-    temp_depth_path = os.path.join(output_dir, "temp_depth.png")
-    with open(temp_rgb_path, "wb") as f:
-        f.write(rgb_bytes)
-    with open(temp_depth_path, "wb") as f:
-        f.write(depth_bytes)
-
-    return run_sam6d(
-        rgb_path=temp_rgb_path,
-        depth_path=temp_depth_path,
-        det_score_thresh=det_score_thresh,
-        visualize=visualize,
-    )
-
-@app.get("/sam6d_from_file_path")
-async def run_sam6d_file_path_handler(
-    rgb_path: str = Query("./Data/Example6/isaacsim_camera_capture_19_left.png", description="Path to the RGB image"),
-    depth_path: str = Query("./Data/Example6/depth_map.png", description="Path to the depth image"),
-    det_score_thresh: float = Query(0.5, description="Detection score threshold"),
-    visualize: bool = Query(True, description="Whether to visualize the results")
-    ):
-    return run_sam6d(
-        rgb_path=rgb_path,
-        depth_path=depth_path,
-        det_score_thresh=det_score_thresh,
-        visualize=visualize,
-    )
-
-@app.post("/sam6d_from_image_file")
-async def run_sam6d_image_file_handler(
-    rgb_file: UploadFile = File(..., description="RGB image file"),
-    depth_file: UploadFile = File(..., description="Depth map file"),
-    det_score_thresh: float = Form(0.5),
-    visualize: bool = Form(True)
-):
-    # Read uploaded files into numpy arrays
-    rgb_bytes = await rgb_file.read()
-    depth_bytes = await depth_file.read()
-
-    # save to temporary files
-    output_dir = os.getenv("OUTPUT_DIR")
-    temp_rgb_path = os.path.join(output_dir, "temp_rgb.png")
-    temp_depth_path = os.path.join(output_dir, "temp_depth.png")
-
-    with open(temp_rgb_path, "wb") as f:
-        f.write(rgb_bytes)
-    with open(temp_depth_path, "wb") as f:
-        f.write(depth_bytes)
-
-    return run_sam6d(
-        rgb_path=temp_rgb_path,
-        depth_path=temp_depth_path,
-        det_score_thresh=det_score_thresh,
-        visualize=visualize,
-    )
 
 # Main function to run the model
 def run_sam6d(
     rgb_path: str = "./Data/Example6/isaacsim_camera_capture_19_left.png",
     depth_path: str = "./Data/Example6/depth_map.png",
     det_score_thresh: float = 0.5,
-    visualize: bool = Query(True, description="Whether to visualize the results"),
+    visualize: bool = True,
 ):
     output_dir = os.getenv("OUTPUT_DIR")
     cam_path = os.getenv("CAM_PATH")
@@ -423,4 +499,27 @@ def run_sam6d(
         "translation": filtered_pred_trans.tolist(),
         "pose_scores": filtered_pose_scores.tolist(),
     }
+
+
+def main():
+    """Main function to start the SAM-6D socket server"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='SAM-6D Socket Server')
+    parser.add_argument('--host', default='localhost', help='Server host (default: localhost)')
+    parser.add_argument('--port', type=int, default=8000, help='Server port (default: 8000)')
+    
+    args = parser.parse_args()
+    
+    try:
+        server = SAM6DSocketServer(host=args.host, port=args.port)
+        server.start_server()
+    except KeyboardInterrupt:
+        logging.info("Server interrupted by user")
+    except Exception as e:
+        logging.error(f"Server error: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()
 

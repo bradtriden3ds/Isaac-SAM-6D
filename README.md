@@ -16,13 +16,14 @@ PointNet2
 cd SAM-6D
 cd Pose_Estimation_Model/model/pointnet2
 python setup.py install
+cd ../../../
 ```
 
 Download models
 ```bash
 cd Instance_Segmentation_Model
 python download_sam.py
-python download_fastsam.py
+# python download_fastsam.py
 python download_dinov2.py
 cd ../
 
@@ -30,6 +31,55 @@ cd Pose_Estimation_Model
 python download_sam6d-pem.py
 ```
 
+## Start SAM6D Server
+
+Locate the `.env` file under the `/SAM-6D` folder,
+
+modify the following envariables, output directory, obj path, camera information path, and cad (ply) file path:
+
+```
+OUTPUT_DIR=./Data/Example6/outputs
+OBJ_PATH=./Data/Example6/BOX_OBJ.obj 
+CAM_PATH=./Data/Example6/camera_1280x720.json
+CAD_PATH=./Data/Example6/BOX_NEW.ply
+```
+
+Start the server by running the `run_server.sh` script under `/SAM-6D` folder
+
+```
+# cd SAM-6D
+chmod +x ./run_server.sh
+./run_server.sh debug
+
+# or in release mode 
+./run_server.sh run
+```
+
+After you see the app is loaded as printed in the command line:
+
+```
+  INFO   Application startup complete.
+```
+
+Go to http://localhost:8000/docs for documentation
+
+![server](./pics/server.gif)
+
+## Performance
+
+After pre-rendering templetes, loading neural network models, e.t.c., the inference time given the `rgb` and `depth` information to get the `rotation and transform` is around 4.03s on
+
+```
+Ubuntu 24.04
+GPU RTX A5000
+GPU i9-13900K 32 cores
+MEM 64GB
+DELL Precision 3660
+```
+
+[Optional] referring to `socket_server.py` and `socket_client_example.py` for socket implementation 
+
+------------------------------------------------------------------------------------------------------------------- Outdated -------------------------------------------------------------------------
 ## Demo
 [Optional]
 Download dataset via: https://huggingface.co/datasets/bop-benchmark/lm/tree/main
