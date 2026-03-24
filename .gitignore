@@ -8,3 +8,4 @@ SAM-6D/Data/Example2/*
 SAM-6D/Data/Example3/*
 .env
 .vscode/*
+stereo/models/deployable_foundation_stereo_l_dynamic.onnx
