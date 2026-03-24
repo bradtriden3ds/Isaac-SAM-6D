@@ -16,10 +16,10 @@ This is a socket-based implementation of the SAM-6D server that replaces the Fas
 
 ```bash
 # Basic usage (localhost:8000)
-python start_server_socket.py
+python server_socket.py
 
 # Custom host and port
-python start_server_socket.py --host 0.0.0.0 --port 9000
+python server_socket.py --host 0.0.0.0 --port 9000
 ```
 
 ### Using the Client

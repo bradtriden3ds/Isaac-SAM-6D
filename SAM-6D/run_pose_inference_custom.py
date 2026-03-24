@@ -31,7 +31,7 @@ def get_parser():
                         help="path to pretrain model")
     parser.add_argument("--model",
                         type=str,
-                        default="pose_estimation_model",
+                        default="Pose_Estimation_Model.model.pose_estimation_model",
                         help="path to model file")
     parser.add_argument("--config",
                         type=str,
@@ -85,13 +85,13 @@ def init():
 
 
 
-from data_utils import (
+from Pose_Estimation_Model.utils.data_utils import (
     load_im,
     get_bbox,
     get_point_cloud_from_depth,
     get_resize_rgb_choose,
 )
-from draw_utils import draw_detections, draw_text, non_max_suppression
+from Pose_Estimation_Model.utils.draw_utils import draw_detections, draw_text, non_max_suppression
 import pycocotools.mask as cocomask
 import trimesh
 
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     model = MODEL.Net(cfg.model)
     model = model.cuda()
     model.eval()
-    checkpoint = os.path.join(os.path.dirname((os.path.abspath(__file__))), 'checkpoints', 'sam-6d-pem-base.pth')
+    checkpoint = os.path.join(os.path.dirname((os.path.abspath(__file__))), 'Pose_Estimation_Model', 'checkpoints', 'sam-6d-pem-base.pth')
     gorilla.solver.load_checkpoint(model=model, filename=checkpoint)
 
     print("=> extracting templates ...")

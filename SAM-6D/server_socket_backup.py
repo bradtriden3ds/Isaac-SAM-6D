@@ -159,20 +159,15 @@ def load_estimator():
     return estimator
 
 sam6d_models = {"detector": None, "estimator": None, "batch": None, "templates": {}}
-OUTPUT_DIR = "/home/uxsimdeu/data/sam6d_working/output"
-CAD_PATH = "/home/uxsimdeu/data/sam6d_working/model/BOX_OBJ.ply"
-CAM_PATH = "/home/uxsimdeu/data/sam6d_working/camerainfo/camera_1280x720.json"
+
 def initialize_models():
     """Initialize SAM-6D models"""
     logging.info("Initializing SAM-6D models...")
-    logging.info(f"OUTPUT_DIR = {OUTPUT_DIR}")
-    logging.info(f"CAD_PATH = {CAD_PATH}")
-    logging.info(f"CAM_PATH = {CAM_PATH}")    
     sam6d_models["detector"] = load_detector()
     sam6d_models["estimator"] = load_estimator()
-    init_templates(sam6d_models["detector"], CAD_PATH, OUTPUT_DIR)
-    sam6d_models["batch"] = batch_input_data(CAM_PATH, device)
-    sam6d_models["templates"] = get_templates(os.path.join(OUTPUT_DIR, 'templates'), pose_estimation_test_config)
+    init_templates(sam6d_models["detector"], os.getenv("CAD_PATH"), os.getenv("OUTPUT_DIR"))
+    sam6d_models["batch"] = batch_input_data(os.getenv("CAM_PATH"), device)
+    sam6d_models["templates"] = get_templates(os.path.join(os.getenv("OUTPUT_DIR"), 'templates'), pose_estimation_test_config)
     logging.info("SAM-6D models initialized successfully!")
 
 def cleanup_models():
@@ -262,7 +257,7 @@ class SAM6DSocketServer:
                 return {'status': 'error', 'message': 'RGB and depth bytes are required'}
             
             # Save bytes to temporary files
-            output_dir = OUTPUT_DIR
+            output_dir = os.getenv("OUTPUT_DIR")
             temp_rgb_path = os.path.join(output_dir, "temp_rgb.png")
             temp_depth_path = os.path.join(output_dir, "temp_depth.png")
             
@@ -333,12 +328,9 @@ def run_sam6d(
     det_score_thresh: float = 0.5,
     visualize: bool = True,
 ):
-    output_dir = OUTPUT_DIR
-    print(f"OUTPUT_DIR: {output_dir}")
-    cam_path = CAM_PATH
-    print(f"CAM_PATH: {cam_path}")
-    cad_path = CAD_PATH
-    print(f"CAD_PATH: {cad_path}")
+    output_dir = os.getenv("OUTPUT_DIR")
+    cam_path = os.getenv("CAM_PATH")
+    cad_path = os.getenv("CAD_PATH")
 
     start_time = time.time()
 
@@ -400,7 +392,7 @@ def run_sam6d(
         results.append(result)     
     
     # detections.to_numpy()
-    # output_dir = OUTPUT_DIR
+    # output_dir = os.getenv("OUTPUT_DIR")
     # save_path = f"{output_dir}/sam6d_results/detection_ism"
 
     # save_json_bop23(save_path+".json", results)
@@ -477,7 +469,7 @@ def run_sam6d(
     filtered_pose_scores = pose_scores[nms_indices]
 
     # Save filtered results
-    print(f"=> saving filtered results ... {output_dir}")
+    print("=> saving filtered results ...")
     os.makedirs(f"{output_dir}/sam6d_results", exist_ok=True)
     with open(os.path.join(f"{output_dir}/sam6d_results", 'detection_pem.json'), "w") as f:
         json.dump(filtered_detections, f)
@@ -508,8 +500,17 @@ def run_sam6d(
         "pose_scores": filtered_pose_scores.tolist(),
     }
 
-def main(args):
-    """Main function to start the SAM-6D socket server"""   
+
+def main():
+    """Main function to start the SAM-6D socket server"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='SAM-6D Socket Server')
+    parser.add_argument('--host', default='localhost', help='Server host (default: localhost)')
+    parser.add_argument('--port', type=int, default=8000, help='Server port (default: 8000)')
+    
+    args = parser.parse_args()
+    
     try:
         server = SAM6DSocketServer(host=args.host, port=args.port)
         server.start_server()
@@ -520,23 +521,5 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='SAM-6D Socket Server')
-    parser.add_argument('--host', default='localhost', help='Server host (default: localhost)')
-    parser.add_argument('--port', type=int, default=8000, help='Server port (default: 8000)')
-    parser.add_argument('--datadir', type=str, required=True, help='Directory to that has all the test data.  It needs to have the camerainfo, usd, and model folders.')
-    parser.add_argument('--model', type=str, required=True, help='Name of the model (wihtout file extension), there should be <model>.obj and <model>.ply in the <datadir>\\model subfolder.')
-    
-    args = parser.parse_args()
-
-    # output directory is <datadir>\output\<model> so the output directory can have model specific templates
-    OUTPUT_DIR = os.path.join(args.datadir, "output", args.model)
-    CAD_PATH = os.path.join(args.datadir, "model", args.model + ".ply")
-    CAM_PATH = os.path.join(args.datadir, "camerainfo", "camera_1280x720.json")
-    logging.info(f"OUTPUT_DIR = {OUTPUT_DIR}")
-    logging.info(f"CAD_PATH = {CAD_PATH}")
-    logging.info(f"CAM_PATH = {CAM_PATH}")
-
-    main(args)
+    main()
 

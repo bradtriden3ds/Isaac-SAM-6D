@@ -143,13 +143,13 @@ def main():
     
     try:
         # Test ping
-        logging.info("Testing connection...")
-        ping_response = client.ping()
-        if ping_response:
-            logging.info(f"Server response: {ping_response}")
-        else:
-            logging.error("Ping failed")
-            return
+        # logging.info("Testing connection...")
+        # ping_response = client.ping()
+        # if ping_response:
+        #     logging.info(f"Server response: {ping_response}")
+        # else:
+        #     logging.error("Ping failed")
+        #     return
         
         # Run SAM-6D inference
         result = client.run_sam6d_inference(
